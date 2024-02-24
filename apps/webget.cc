@@ -20,9 +20,9 @@ void get_URL(const string &host, const string &path) {
     //cerr << "Function called: get_URL(" << host << ", " << path << ").\n";
     //cerr << "Warning: get_URL() has not been implemented yet.\n";
 	
-	Address ad(host, "http");
 	TCPSocket receiveSock;
-	receiveSock.bind(ad);
+	receiveSock.bind(Address("127.0.0.1", "80"));
+	receiveSock.connect(Address(host, "http"));
 	receiveSock.listen(1);
 	TCPSocket sendSock = receiveSock.accept();
 	const string msg = "GET " + path + " HTTP/1.1\nHost: " + host + "\nConnection: close\n\n";
