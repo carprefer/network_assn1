@@ -20,18 +20,14 @@ void get_URL(const string &host, const string &path) {
     //cerr << "Function called: get_URL(" << host << ", " << path << ").\n";
     //cerr << "Warning: get_URL() has not been implemented yet.\n";
 	
-	TCPSocket receiveSock;
-	receiveSock.bind(Address("127.0.0.1", "80"));
-	receiveSock.connect(Address(host, "http"));
-	receiveSock.listen(1);
-	TCPSocket sendSock = receiveSock.accept();
+	TCPSocket sock;
+	sock.connect(Address(host, "http"));
 	const string msg = "GET " + path + " HTTP/1.1\nHost: " + host + "\nConnection: close\n\n";
-	sendSock.write(msg);
-	while(!receiveSock.eof()) {
-		cout << receiveSock.read();
+	sock.write(msg);
+	while(!sock.eof()) {
+		cout << sock.read();
 	}
-	sendSock.close();
-	receiveSock.close();
+	sock.close();
 
 	return;
 }
