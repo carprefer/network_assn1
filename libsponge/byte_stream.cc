@@ -7,40 +7,65 @@
 
 // You will need to add private members to the class declaration in `byte_stream.hh`
 
-template <typename... Targs>
-void DUMMY_CODE(Targs &&... /* unused */) {}
+//template <typename... Targs>
+//void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
-ByteStream::ByteStream(const size_t capacity) { DUMMY_CODE(capacity); }
+ByteStream::ByteStream(const size_t capacity) {
+	size = capacity;
+	filled = 0;	
+	inputEnd = 0;
+}
 
 size_t ByteStream::write(const string &data) {
-    DUMMY_CODE(data);
-    return {};
+    size_t dataSize = data.size();
+	size_t writtenSize;
+
+	if(dataSize + filled <= capacity) {
+		buffer = buffer + data;
+		writtenSize = dataSize;
+		filled += dataSize;
+	}
+	else {
+		writtenSize = capacity - filled;
+		buffer = buffer + data.substr(0, writtenSize);
+		filled = capacity;
+	}
+    return writtenSize;
 }
 
 //! \param[in] len bytes will be copied from the output side of the buffer
 string ByteStream::peek_output(const size_t len) const {
-    DUMMY_CODE(len);
-    return {};
+    return buffer.substr(0, len);
 }
 
 //! \param[in] len bytes will be removed from the output side of the buffer
-void ByteStream::pop_output(const size_t len) { DUMMY_CODE(len); }
+void ByteStream::pop_output(const size_t len) { 
+	buffer.erase(0, len);
+	filled -= len;
+}
 
 //! Read (i.e., copy and then pop) the next "len" bytes of the stream
 //! \param[in] len bytes will be popped and returned
 //! \returns a string
 std::string ByteStream::read(const size_t len) {
-    DUMMY_CODE(len);
-    return {};
+    string copy = peek_output(len);
+	pop_output(len);
+    return copy;
 }
 
-void ByteStream::end_input() {}
+void ByteStream::end_input() {
+	inputEnd = 1;
+}
 
-bool ByteStream::input_ended() const { return {}; }
+bool ByteStream::input_ended() const {
+	return inputEnd; 
+}
 
-size_t ByteStream::buffer_size() const { return {}; }
+size_t ByteStream::buffer_size() const {
+	return ; 
+}
 
 bool ByteStream::buffer_empty() const { return {}; }
 
