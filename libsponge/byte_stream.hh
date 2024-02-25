@@ -18,11 +18,11 @@ class ByteStream {
     // different approaches.
 
     bool _error{};  //!< Flag indicating that the stream suffered an error.
-	std::string buffer;
-	size_t size;
-	size_t filled;
-	bool inputEnd;
-	size_t writtenTotal, readTotal;
+	std::string buffer; 						// buffer(data type string)
+	size_t size;								// total capacity of buffer
+	size_t filled;								// current occuping bytes in buffer
+	bool inputEnd;								// flag indicates whether inputs are ended or not
+	size_t writtenTotal, readTotal;				// total written / read bytes.
   public:
     //! Construct a stream with room for `capacity` bytes.
     ByteStream(const size_t capacity);
