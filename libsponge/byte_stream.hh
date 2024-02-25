@@ -22,6 +22,7 @@ class ByteStream {
 	size_t size;
 	size_t filled;
 	bool inputEnd;
+	size_t writtenTotal, readTotal;
   public:
     //! Construct a stream with room for `capacity` bytes.
     ByteStream(const size_t capacity);
