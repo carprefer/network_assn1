@@ -13,7 +13,7 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 using namespace std;
 
 StreamReassembler::StreamReassembler(const size_t capacity) 
-: _output(capacity), _capacity(capacity), totalRead(0), assembled(0), unassembled(""), _index("|"), stringLoc(0), rightGap(0), leftGap(0), eofFlag(0)
+: _output(capacity), _capacity(capacity), totalRead(0), assembled(0), unassembled(""), _index("|"), stringLoc(0), rightGap(0), leftGap(0), middleGap(0), eofFlag(0)
 {}
 
 //! \details This function accepts a substring (aka a segment) of bytes,
@@ -46,6 +46,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
 	else if(eof) eofFlag = 1;
 
 	int made = update_index(realIdx, realSize);
+	unassembled.erase(stringLoc + leftGap, middleGap);
 	if(realData.size() > leftGap + rightGap) 
 		unassembled.insert(stringLoc + leftGap, realData.substr(leftGap, realSize - leftGap - rightGap));
 	if(made) {

@@ -22,6 +22,7 @@ class StreamReassembler {
 	int stringLoc;
 	size_t rightGap;
 	size_t leftGap;
+	size_t middleGap;
 	bool eofFlag;
 	
 	int update_index(uint64_t index, int size) {
@@ -34,27 +35,35 @@ class StreamReassembler {
 		int i = 0;
 		int currentLoc = 0;
 		int preLoc = 0;
+		int myLoc = 0;
 		stringLoc = 0;
 		rightGap = 0;
 		leftGap = 0;
+		middleGap = 0;
 		char c;
 		while(1) {
 			c = _index[i];
 			if(c == ':') flag = 1;
 			else if(c == ' ') {
-				if(index > currentIdx) {
+				if(index > currentIdx) {	
 					preLoc = currentLoc;
-					currentLoc = i + 1;
-					stringLoc += currentSize;
-					flag = 0;
 					preIdx = currentIdx;
-					currentIdx = 0;
 					preSize = currentSize;
+					stringLoc += currentSize;
+					myLoc = i + 1;
+					currentLoc = i + 1;
+					flag = 0;
+					currentIdx = 0;
 					currentSize = 0;
 				}
-				else if(index < currentIdx) {
-					break;
+				if(index + size > currentIdx + currentSize) {
+					if(flag) middleGap += currentSize;
+					currentLoc = i + 1;
+					flag = 0;
+					currentIdx = 0;
+					currentSize = 0;
 				}
+				else break;
 			}
 			else if(c == '|') break;
 			else {
@@ -71,7 +80,7 @@ class StreamReassembler {
 		}
 		uint64_t newIdx;
 		int newSize, newLoc;
-		if(i && flag && preIdx + preSize + size >= currentIdx) {
+		if(preIdx & flag && preIdx + preSize + size >= currentIdx) {
 			_index.erase(preLoc, i - preLoc + 1);
 			newLoc = preLoc;
 			newIdx = preIdx;
@@ -79,7 +88,7 @@ class StreamReassembler {
 			rightGap = size - (currentIdx - index);
 			leftGap = preSize - (index - preIdx);
 		}
-		else if( i && preIdx + preSize >= index) {
+		else if( preIdx && preIdx + preSize >= index) {
 			_index.erase(preLoc, currentLoc-preLoc);
 			newLoc = preLoc;
 			newIdx = preIdx;
@@ -94,7 +103,8 @@ class StreamReassembler {
 			rightGap = size - (currentIdx - index);
 		}
 		else {
-			newLoc = currentLoc;
+			_index.erase(myLoc, currentLoc - myLoc);
+			newLoc = myLoc;
 			newIdx = index;
 			newSize = size;
 		}
