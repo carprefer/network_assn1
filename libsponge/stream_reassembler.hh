@@ -38,7 +38,7 @@ class StreamReassembler {
 			else if(c == ' ') {
 				if(index > currentIdx) {
 					preLoc = currentLoc;
-					currentLoc = i;
+					currentLoc = i + 1;
 					stringLoc += currentSize;
 					flag = 0;
 					preIdx = currentIdx;
@@ -66,7 +66,7 @@ class StreamReassembler {
 		uint64_t newIdx;
 		int newSize, newLoc;
 		if(preIdx + preSize + size == currentIdx) {
-			_index.erase(preLoc, i - preLoc);
+			_index.erase(preLoc, i - preLoc + 1);
 			newLoc = preLoc;
 			newIdx = preIdx;
 			newSize = preSize + size + currentSize;
@@ -78,7 +78,7 @@ class StreamReassembler {
 			newSize = preSize + size;
 		}
 		else if(index + size == currentIdx) {
-			_index.erase(currentLoc, i - currentLoc);
+			_index.erase(currentLoc, i - currentLoc + 1);
 			newLoc = currentLoc;
 			newIdx = index;
 			newSize = size + currentSize;
@@ -89,7 +89,10 @@ class StreamReassembler {
 			newSize = size;
 		}
 		_index.insert(newLoc, std::to_string(newIdx) + ":" + std::to_string(newSize) + " ");
-		if(assembled == index) return newSize;
+		if(assembled == index) {
+			_index.erase(0, _index.find(' ') + 1);
+			return newSize;
+		}
 		return 0;
 	}
 
