@@ -13,39 +13,48 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 using namespace std;
 
 StreamReassembler::StreamReassembler(const size_t capacity) 
-: _output(capacity), _capacity(capacity), totalRead(0), assembled(0), unassembled(""), _index("|"), stringLoc(0)
+: _output(capacity), _capacity(capacity), totalRead(0), assembled(0), unassembled(""), _index("|"), stringLoc(0), rightGap(0), leftGap(0), eofFlag(0)
 {}
 
 //! \details This function accepts a substring (aka a segment) of bytes,
 //! possibly out-of-order, from the logical stream, and assembles any newly
 //! contiguous substrings and writes them into the output stream in order.
-void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
-    
-	int dataSize = data.size();											// substring's size(<=1640?)
+void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {											// substring's size(<=1640?)
 	/* update stream in case of reading the bytestream */
 	totalRead = _output.bytes_read();
 	assembled = _output.buffer_size();
 
 	uint64_t startIdx = totalRead + assembled;
 	uint64_t endIdx = totalRead + _capacity;
-	
+	string realData = data;
+	size_t realIdx = index;
+	size_t realSize = realData.size();
+
 	if(index >= endIdx) return;
 	else if(index < startIdx) {
-		if(index + dataSize < startIdx) return;
+		if(index + data.size() < startIdx) return;
 		else {
-			//cutting
+			realData = realData.substr(startIdx - index);
+			realIdx = startIdx;
+			realSize -= (startIdx - index);
 		}
 	}
-	int made = update_index(index, dataSize);
-	unassembled.insert(stringLoc, data);
+	if(realIdx + realSize > endIdx) {
+		realData.erase(endIdx - realIdx, realSize - endIdx + realIdx);
+		realSize -= (realSize - endIdx + realIdx);
+	}
+	else if(eof) eofFlag = 1;
+
+	int made = update_index(realIdx, realData.size());
+	if(realData.size() > leftGap + rightGap) 
+		unassembled.insert(stringLoc + leftGap, realData.substr(leftGap, realData.size() - leftGap - rightGap));
 	if(made) {
 		assembled += made;
 		_output.write(unassembled.substr(0, made));
 		unassembled.erase(0, made);
 	}
 
-
-	if(eof) _output.end_input();							// if it receives eof signal, tells bytestream that the input is ended.
+	if(eofFlag && unassembled.size() == 0) _output.end_input();
 	return;
 }
 

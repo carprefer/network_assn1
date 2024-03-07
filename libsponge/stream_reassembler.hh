@@ -20,8 +20,12 @@ class StreamReassembler {
 	std::string unassembled;
 	std::string _index;
 	int stringLoc;
+	size_t rightGap;
+	size_t leftGap;
+	bool eofFlag;
 	
 	int update_index(uint64_t index, int size) {
+		using std::max;
 		uint64_t preIdx = 0;
 		uint64_t currentIdx = 0;
 		int preSize = 0;
@@ -31,6 +35,8 @@ class StreamReassembler {
 		int currentLoc = 0;
 		int preLoc = 0;
 		stringLoc = 0;
+		rightGap = 0;
+		leftGap = 0;
 		char c;
 		while(1) {
 			c = _index[i];
@@ -65,23 +71,27 @@ class StreamReassembler {
 		}
 		uint64_t newIdx;
 		int newSize, newLoc;
-		if(preIdx + preSize + size == currentIdx) {
+		if(i && flag && preIdx + preSize + size >= currentIdx) {
 			_index.erase(preLoc, i - preLoc + 1);
 			newLoc = preLoc;
 			newIdx = preIdx;
-			newSize = preSize + size + currentSize;
+			newSize = max(max(preIdx + preSize, index + size), currentIdx + currentSize) - newIdx;
+			rightGap = size - (currentIdx - index);
+			leftGap = preSize - (index - preIdx);
 		}
-		else if(preIdx + preSize == index) {
+		else if( i && preIdx + preSize >= index) {
 			_index.erase(preLoc, currentLoc-preLoc);
 			newLoc = preLoc;
 			newIdx = preIdx;
-			newSize = preSize + size;
+			newSize = max(preIdx + preSize, index + size) - newIdx;
+			leftGap = preSize - (index - preIdx);
 		}
-		else if(index + size == currentIdx) {
+		else if(flag && index + size >= currentIdx) {
 			_index.erase(currentLoc, i - currentLoc + 1);
 			newLoc = currentLoc;
 			newIdx = index;
-			newSize = size + currentSize;
+			newSize = max(index + size, currentIdx + currentSize);
+			rightGap = size - (currentIdx - index);
 		}
 		else {
 			newLoc = currentLoc;
