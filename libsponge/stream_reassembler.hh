@@ -14,6 +14,84 @@ class StreamReassembler {
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
+	
+	uint64_t totalRead;
+	size_t assembled;
+	std::string unassembled;
+	std::string _index;
+	int stringLoc;
+	
+	int update_index(uint64_t index, int size) {
+		uint64_t preIdx = 0;
+		uint64_t currentIdx = 0;
+		int preSize = 0;
+		int currentSize = 0;
+		bool flag = 0;								// 0: index / 1: size 
+		int i = 0;
+		int currentLoc = 0;
+		int preLoc = 0;
+		stringLoc = 0;
+		char c;
+		while(1) {
+			c = _index[i];
+			if(c == ':') flag = 1;
+			else if(c == ' ') {
+				if(index > currentIdx) {
+					preLoc = currentLoc;
+					currentLoc = i;
+					stringLoc += currentSize;
+					flag = 0;
+					preIdx = currentIdx;
+					currentIdx = 0;
+					preSize = currentSize;
+					currentSize = 0;
+				}
+				else if(index < currentIdx) {
+					break;
+				}
+			}
+			else if(c == '|') break;
+			else {
+				if(flag) {
+					currentSize *= 10;
+					currentSize += c - '0';
+				}
+				else {
+					currentIdx *= 10;
+					currentIdx += c - '0';
+				}
+			}
+			i++;
+		}
+		uint64_t newIdx;
+		int newSize, newLoc;
+		if(preIdx + preSize + size == currentIdx) {
+			_index.erase(preLoc, i - preLoc);
+			newLoc = preLoc;
+			newIdx = preIdx;
+			newSize = preSize + size + currentSize;
+		}
+		else if(preIdx + preSize == index) {
+			_index.erase(preLoc, currentLoc-preLoc);
+			newLoc = preLoc;
+			newIdx = preIdx;
+			newSize = preSize + size;
+		}
+		else if(index + size == currentIdx) {
+			_index.erase(currentLoc, i - currentLoc);
+			newLoc = currentLoc;
+			newIdx = index;
+			newSize = size + currentSize;
+		}
+		else {
+			newLoc = currentLoc;
+			newIdx = index;
+			newSize = size;
+		}
+		_index.insert(newLoc, std::to_string(newIdx) + ":" + std::to_string(newSize) + " ");
+		if(assembled == index) return newSize;
+		return 0;
+	}
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
