@@ -99,7 +99,7 @@ class StreamReassembler {
 			newSize = size;
 		}
 		_index.insert(newLoc, std::to_string(newIdx) + ":" + std::to_string(newSize) + " ");
-		if(assembled == index) {
+		if(totalRead + assembled == index) {
 			_index.erase(0, _index.find(' ') + 1);
 			return newSize;
 		}
