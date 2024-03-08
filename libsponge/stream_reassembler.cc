@@ -46,15 +46,19 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
 	else if(eof) eofFlag = 1;
 
 	int made = update_index(realIdx, realSize);
-	unassembled.erase(stringLoc + leftGap, middleGap);
-	if(realData.size() > leftGap + rightGap) 
-		unassembled.insert(stringLoc + leftGap, realData.substr(leftGap, realSize - leftGap - rightGap));
+	if(realData.size() > leftGap + rightGap) {
+		unassembled.erase(stringLoc, middleGap);
+
+		unassembled.insert(stringLoc, realData.substr(leftGap, realSize - leftGap - rightGap));
+	}
 	if(made) {
 		assembled += made;
 		_output.write(unassembled.substr(0, made));
 		unassembled.erase(0, made);
+		cout << " assembled / totalwrite / all / capacity: " << assembled << " " << _output.bytes_written() << " " << unassembled.size() + assembled << " " << _capacity << endl;
 	}
-
+	cout << realIdx << " " << realSize << endl;
+    cout << _index << endl;	
 	if(eofFlag && unassembled.size() == 0) _output.end_input();
 	return;
 }

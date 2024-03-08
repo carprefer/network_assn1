@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <string>
+#include <iostream>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
@@ -26,6 +27,9 @@ class StreamReassembler {
 	bool eofFlag;
 	
 	int update_index(uint64_t index, int size) {
+		using std::endl;
+		using std::cout;
+		using namespace std;
 		using std::max;
 		uint64_t preIdx = 0;
 		uint64_t currentIdx = 0;
@@ -45,6 +49,8 @@ class StreamReassembler {
 			c = _index[i];
 			if(c == ':') flag = 1;
 			else if(c == ' ') {
+				uint64_t tempIdx = currentIdx;
+				size_t tempSize = currentSize;
 				if(index > currentIdx) {	
 					preLoc = currentLoc;
 					preIdx = currentIdx;
@@ -56,8 +62,8 @@ class StreamReassembler {
 					currentIdx = 0;
 					currentSize = 0;
 				}
-				if(index + size > currentIdx + currentSize) {
-					if(flag) middleGap += currentSize;
+				if(index + size >= tempIdx + tempSize) {
+					if(flag) middleGap += tempSize;
 					currentLoc = i + 1;
 					flag = 0;
 					currentIdx = 0;
@@ -78,9 +84,19 @@ class StreamReassembler {
 			}
 			i++;
 		}
+	/*	int sum = 0;
+		string clone = _index;
+		while(1) {
+			if(clone[0] == '|') break;
+			sum += stoi(clone.substr(clone.find(':')+1, clone.find(" ") -clone.find(':') + 1));
+			clone.erase(0, clone.find(' ') + 1);
+		}
+		cout << "sum / real : " << sum << " " << unassembled.size() << endl;
+	*/
 		uint64_t newIdx;
 		int newSize, newLoc;
-		if(preIdx & flag && preIdx + preSize + size >= currentIdx) {
+		if((preIdx && flag) && (index + size >= currentIdx && preIdx + preSize >= index)) {
+			cout << "case1" << endl;
 			_index.erase(preLoc, i - preLoc + 1);
 			newLoc = preLoc;
 			newIdx = preIdx;
@@ -88,27 +104,31 @@ class StreamReassembler {
 			rightGap = size - (currentIdx - index);
 			leftGap = preSize - (index - preIdx);
 		}
-		else if( preIdx && preIdx + preSize >= index) {
+		else if( preIdx && (preIdx + preSize >= index)) {
+			cout << "case2" << endl;
 			_index.erase(preLoc, currentLoc-preLoc);
 			newLoc = preLoc;
 			newIdx = preIdx;
 			newSize = max(preIdx + preSize, index + size) - newIdx;
 			leftGap = preSize - (index - preIdx);
 		}
-		else if(flag && index + size >= currentIdx) {
-			_index.erase(currentLoc, i - currentLoc + 1);
-			newLoc = currentLoc;
+		else if(flag && (index + size >= currentIdx)) {
+			cout << "case3 " << endl;
+			_index.erase(myLoc, i - myLoc + 1);
+			newLoc = myLoc;
 			newIdx = index;
-			newSize = max(index + size, currentIdx + currentSize);
+			newSize = max(index + size, currentIdx + currentSize) - newIdx;
 			rightGap = size - (currentIdx - index);
 		}
 		else {
+
 			_index.erase(myLoc, currentLoc - myLoc);
 			newLoc = myLoc;
 			newIdx = index;
 			newSize = size;
 		}
 		_index.insert(newLoc, std::to_string(newIdx) + ":" + std::to_string(newSize) + " ");
+	
 		if(totalRead + assembled == index) {
 			_index.erase(0, _index.find(' ') + 1);
 			return newSize;
