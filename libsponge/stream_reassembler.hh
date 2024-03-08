@@ -14,29 +14,30 @@ class StreamReassembler {
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
-	
-	uint64_t totalRead;					// total amount of data that is read via _output bytestream
-	size_t assembled;					// size of currently assembled but not read data
 
-	bool eofFlag;						// remember whether eof signal is received or not without being discarded.
+    uint64_t totalRead;  // total amount of data that is read via _output bytestream
+    size_t assembled;    // size of currently assembled but not read data
 
-	std::string _index;					// string that restores pair of information about one substring. (index:size)
-	/* _index string 
-	 * this string have (index:size) pairs and each pair is separated by ' ' space character. 
-	 * mark the end of this string with '|' 
-	 * so it is look like this "2:1 4:2 14:1 20:45 |" 
-	 * their indexes are ordered in assending order. 
-	 * if their range conflict each ohter by adding new substring, than merge */
-	std::string unassembled;			// string that stores unassembled substrings in assending order by index.(they is no blank between all of them)
-	/* belows are used for modifying unassembled string */
-	size_t stringLoc;					// location that new substrings will be added.
-	size_t rightGap;					// for overwrite
-	size_t leftGap;
-	size_t middleGap;
+    bool eofFlag;  // remember whether eof signal is received or not without being discarded.
 
-	/* add information about new substring to _index string 
-	 * and return the size of bytes that need to be added to _output bytestream(). */
-	size_t update_index(uint64_t index, size_t size);		
+    std::string _index;  // string that restores pair of information about one substring. (index:size)
+    /* _index string
+     * this string have (index:size) pairs and each pair is separated by ' ' space character.
+     * mark the end of this string with '|'
+     * so it is look like this "2:1 4:2 14:1 20:45 |"
+     * their indexes are ordered in assending order.
+     * if their range conflict each ohter by adding new substring, than merge */
+    std::string unassembled;  // string that stores unassembled substrings in assending order by index.(they is no blank
+                              // between all of them)
+    /* belows are used for modifying unassembled string */
+    size_t stringLoc;  // location that new substrings will be added.
+    size_t rightGap;   // for overwrite
+    size_t leftGap;
+    size_t middleGap;
+
+    /* add information about new substring to _index string
+     * and return the size of bytes that need to be added to _output bytestream(). */
+    size_t update_index(uint64_t index, size_t size);
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.

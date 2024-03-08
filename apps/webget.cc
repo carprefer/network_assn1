@@ -7,17 +7,17 @@
 using namespace std;
 
 void get_URL(const string &host, const string &path) {
-	Address addr(host, "http");					// host(server) address
-	TCPSocket sock;								// client's socket				
-	sock.connect(addr);							// connect client to server
-	const string msg = "GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\n\r\n";
-	sock.write(msg);							// send messages to server that require something in the path
-	while(!sock.eof()) {						// repeat .read() function until socket reaches EOF
-		cout << sock.read();
-	}
-	sock.close();								// close socket
+    Address addr(host, "http");  // host(server) address
+    TCPSocket sock;              // client's socket
+    sock.connect(addr);          // connect client to server
+    const string msg = "GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\n\r\n";
+    sock.write(msg);       // send messages to server that require something in the path
+    while (!sock.eof()) {  // repeat .read() function until socket reaches EOF
+        cout << sock.read();
+    }
+    sock.close();  // close socket
 
-	return;
+    return;
 }
 
 int main(int argc, char *argv[]) {
