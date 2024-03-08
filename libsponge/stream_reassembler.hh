@@ -5,7 +5,6 @@
 
 #include <cstdint>
 #include <string>
-#include <iostream>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
@@ -16,125 +15,28 @@ class StreamReassembler {
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
 	
-	uint64_t totalRead;
-	size_t assembled;
-	std::string unassembled;
-	std::string _index;
-	int stringLoc;
-	size_t rightGap;
+	uint64_t totalRead;					// total amount of data that is read via _output bytestream
+	size_t assembled;					// size of currently assembled but not read data
+
+	bool eofFlag;						// remember whether eof signal is received or not without being discarded.
+
+	std::string _index;					// string that restores pair of information about one substring. (index:size)
+	/* _index string 
+	 * this string have (index:size) pairs and each pair is separated by ' ' space character. 
+	 * mark the end of this string with '|' 
+	 * so it is look like this "2:1 4:2 14:1 20:45 |" 
+	 * their indexes are ordered in assending order. 
+	 * if their range conflict each ohter by adding new substring, than merge */
+	std::string unassembled;			// string that stores unassembled substrings in assending order by index.(they is no blank between all of them)
+	/* belows are used for modifying unassembled string */
+	size_t stringLoc;					// location that new substrings will be added.
+	size_t rightGap;					// for overwrite
 	size_t leftGap;
 	size_t middleGap;
-	bool eofFlag;
-	
-	int update_index(uint64_t index, int size) {
-		using std::endl;
-		using std::cout;
-		using namespace std;
-		using std::max;
-		uint64_t preIdx = 0;
-		uint64_t currentIdx = 0;
-		int preSize = 0;
-		int currentSize = 0;
-		bool flag = 0;								// 0: index / 1: size 
-		int i = 0;
-		int currentLoc = 0;
-		int preLoc = 0;
-		int myLoc = 0;
-		stringLoc = 0;
-		rightGap = 0;
-		leftGap = 0;
-		middleGap = 0;
-		char c;
-		while(1) {
-			c = _index[i];
-			if(c == ':') flag = 1;
-			else if(c == ' ') {
-				uint64_t tempIdx = currentIdx;
-				size_t tempSize = currentSize;
-				if(index > currentIdx) {	
-					preLoc = currentLoc;
-					preIdx = currentIdx;
-					preSize = currentSize;
-					stringLoc += currentSize;
-					myLoc = i + 1;
-					currentLoc = i + 1;
-					flag = 0;
-					currentIdx = 0;
-					currentSize = 0;
-				}
-				if(index + size >= tempIdx + tempSize) {
-					if(flag) middleGap += tempSize;
-					currentLoc = i + 1;
-					flag = 0;
-					currentIdx = 0;
-					currentSize = 0;
-				}
-				else break;
-			}
-			else if(c == '|') break;
-			else {
-				if(flag) {
-					currentSize *= 10;
-					currentSize += c - '0';
-				}
-				else {
-					currentIdx *= 10;
-					currentIdx += c - '0';
-				}
-			}
-			i++;
-		}
-	/*	int sum = 0;
-		string clone = _index;
-		while(1) {
-			if(clone[0] == '|') break;
-			sum += stoi(clone.substr(clone.find(':')+1, clone.find(" ") -clone.find(':') + 1));
-			clone.erase(0, clone.find(' ') + 1);
-		}
-		cout << "sum / real : " << sum << " " << unassembled.size() << endl;
-	*/
-		uint64_t newIdx;
-		int newSize, newLoc;
-		if((preIdx && flag) && (index + size >= currentIdx && preIdx + preSize >= index)) {
-			cout << "case1" << endl;
-			_index.erase(preLoc, i - preLoc + 1);
-			newLoc = preLoc;
-			newIdx = preIdx;
-			newSize = max(max(preIdx + preSize, index + size), currentIdx + currentSize) - newIdx;
-			rightGap = size - (currentIdx - index);
-			leftGap = preSize - (index - preIdx);
-		}
-		else if( preIdx && (preIdx + preSize >= index)) {
-			cout << "case2" << endl;
-			_index.erase(preLoc, currentLoc-preLoc);
-			newLoc = preLoc;
-			newIdx = preIdx;
-			newSize = max(preIdx + preSize, index + size) - newIdx;
-			leftGap = preSize - (index - preIdx);
-		}
-		else if(flag && (index + size >= currentIdx)) {
-			cout << "case3 " << endl;
-			_index.erase(myLoc, i - myLoc + 1);
-			newLoc = myLoc;
-			newIdx = index;
-			newSize = max(index + size, currentIdx + currentSize) - newIdx;
-			rightGap = size - (currentIdx - index);
-		}
-		else {
 
-			_index.erase(myLoc, currentLoc - myLoc);
-			newLoc = myLoc;
-			newIdx = index;
-			newSize = size;
-		}
-		_index.insert(newLoc, std::to_string(newIdx) + ":" + std::to_string(newSize) + " ");
-	
-		if(totalRead + assembled == index) {
-			_index.erase(0, _index.find(' ') + 1);
-			return newSize;
-		}
-		return 0;
-	}
+	/* add information about new substring to _index string 
+	 * and return the size of bytes that need to be added to _output bytestream(). */
+	size_t update_index(uint64_t index, int size);		
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
