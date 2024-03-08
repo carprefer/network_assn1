@@ -7,7 +7,7 @@ My POVIS ID: [carprefer]
 
 My student ID (numeric): [20200120]
 
-This assignment took me about [n] hours to do (including the time on studying, designing, and writing the code).
+This assignment took me about [28] hours to do (including the time on studying, designing, and writing the code).
 
 Program Structure and Design of the StreamReassembler:
 []

@@ -36,7 +36,7 @@ class StreamReassembler {
 
 	/* add information about new substring to _index string 
 	 * and return the size of bytes that need to be added to _output bytestream(). */
-	size_t update_index(uint64_t index, int size);		
+	size_t update_index(uint64_t index, size_t size);		
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.

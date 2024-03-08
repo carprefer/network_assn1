@@ -1,5 +1,5 @@
 #include "stream_reassembler.hh"
-#include <iostream>
+
 // Dummy implementation of a stream reassembler.
 
 // For Lab 1, please replace with a real implementation that passes the
@@ -9,97 +9,103 @@
 
 using namespace std;
 
-size_t StreamReassembler::update_index(uint64_t index, int size) {
+size_t StreamReassembler::update_index(uint64_t index, size_t size) {
+	/* pre substring's information */
 	uint64_t preIdx = 0;
-	uint64_t currentIdx = 0;
-	int preSize = 0;
-	int currentSize = 0;
-	bool flag = 0;								// 0: index / 1: size 
-	int i = 0;
-	int currentLoc = 0;
-	int preLoc = 0;
-	int myLoc = 0;
+	size_t preSize = 0;
+	size_t preLoc = 0;
+	/* post substring's information */
+	uint64_t postIdx = 0;
+	size_t postSize = 0;
+	size_t postLoc = 0;
+	/* indicates newly added substring's location */
+	size_t myLoc = 0;
+	/* initialize members */
 	stringLoc = 0;
 	rightGap = 0;
 	leftGap = 0;
 	middleGap = 0;
-	char c;
+	/* iterate _index string to find the right place to insert newly added substring's information */
+	size_t iter = 0;												// iterator.. index accessor
 	while(1) {
-		c = _index[i];
-		if(c == ':') flag = 1;
-		else if(c == ' ') {
-			uint64_t tempIdx = currentIdx;
-			size_t tempSize = currentSize;
-			if(index > currentIdx) {	
-				preLoc = currentLoc;
-				preIdx = currentIdx;
-				preSize = currentSize;
-				stringLoc += currentSize;
-				myLoc = i + 1;
-				currentLoc = i + 1;
-				flag = 0;
-				currentIdx = 0;
-				currentSize = 0;
-			}
-			if(index + size >= tempIdx + tempSize) {
-				if(flag) middleGap += tempSize;
-				currentLoc = i + 1;
-				flag = 0;
-				currentIdx = 0;
-				currentSize = 0;
-			}
-			else break;
+		/* get some informations about current substring(post) that iter pointing to */
+		postIdx = 0;												// in case of reaching at end '|'
+		postSize = 0;
+		postLoc = iter;												
+		if(_index[iter] == '|') break;								// if it reaches end, then break;
+		int f1 = _index.find(':', iter);							// first index of ':' after iter
+		int f2 = _index.find(' ', iter);							// first index of ' ' after iter
+		postIdx = stoi(_index.substr(iter, f1 - iter));				// get a index information about current substring
+		postSize = stoi(_index.substr(f1 + 1, f2 - f1 -1));			// get a size information about current substring
+		iter = f2 + 1;												// move iterator
+		/* decide whether go further or not */
+		if(index > postIdx) {										// this means we can go further
+			/* update pre substring to point current substring */
+			preLoc = postLoc;
+			preIdx = postIdx;
+			preSize = postSize;
+			myLoc = iter;											// also remember this place(in case of overwritting)
+
+			stringLoc += postSize;									// accumulate all size of the passed by substrings 
 		}
-		else if(c == '|') break;
-		else {
-			if(flag) {
-				currentSize *= 10;
-				currentSize += c - '0';
-			}
-			else {
-				currentIdx *= 10;
-				currentIdx += c - '0';
-			}
-		}
-		i++;
+		/* this means current substrings(post) are exist in our newly added substirng
+		 * so keep going without updating pre substings & myLoc */
+		else if(index + size >= postIdx + postSize) middleGap += postSize;	
+		else break;													// this means we can't go further
 	}
-	uint64_t newIdx;
-	int newSize, newLoc;
-	if((preIdx && flag) && (index + size >= currentIdx && preIdx + preSize >= index)) {
-		_index.erase(preLoc, i - preLoc + 1);
+	/* simple variable that reduces our code.. */
+	uint64_t newIdx;											
+	size_t newSize, newLoc, newErase;
+	/* decide the type of insertion 
+	 * 1: merging with pre substring and post substring 
+	 * 2: merging with pre substring 
+	 * 3: merging with post substring
+	 * 4: else (overwritting could be possible) */
+	/* if there is pre substring & post substring -> preIdx && postIdx 
+	 * and they are all connected to each other, apply this */
+	if(preIdx && postIdx && index + size >= postIdx && preIdx + preSize >= index) {
+		newErase = iter - preLoc;
 		newLoc = preLoc;
 		newIdx = preIdx;
-		newSize = max(max(preIdx + preSize, index + size), currentIdx + currentSize) - newIdx;
-		rightGap = size - (currentIdx - index);
+		newSize = max(max(preIdx + preSize, index + size), postIdx + postSize) - newIdx;
+		rightGap = size - (postIdx - index);
 		leftGap = preSize - (index - preIdx);
 	}
-	else if( preIdx && (preIdx + preSize >= index)) {
-		_index.erase(preLoc, currentLoc-preLoc);
+	/* if there is pre substring -> preIdx
+	 * and it is connected to our newly added substring, apply this */
+	else if(preIdx && preIdx + preSize >= index) {
+		newErase = postLoc - preLoc;
 		newLoc = preLoc;
 		newIdx = preIdx;
 		newSize = max(preIdx + preSize, index + size) - newIdx;
 		leftGap = preSize - (index - preIdx);
 	}
-	else if(flag && (index + size >= currentIdx)) {
-		_index.erase(myLoc, i - myLoc + 1);
+	/* if there is post substring -> postIdx
+	 * and it is connected to our newly added substring, apply this */
+	else if(postIdx && index + size >= postIdx) {
+		newErase = iter - myLoc;
 		newLoc = myLoc;
 		newIdx = index;
-		newSize = max(index + size, currentIdx + currentSize) - newIdx;
-		rightGap = size - (currentIdx - index);
+		newSize = max(index + size, postIdx + postSize) - newIdx;
+		rightGap = size - (postIdx - index);
 	}
+	/* else: but must erase some part in case of overwritting */ 
 	else {
-
-		_index.erase(myLoc, currentLoc - myLoc);
+		newErase = postLoc - myLoc;
 		newLoc = myLoc;
 		newIdx = index;
 		newSize = size;
 	}
-	_index.insert(newLoc, std::to_string(newIdx) + ":" + std::to_string(newSize) + " ");
-
+	/* erase old information and in that place, insert newly modified information */
+	_index.erase(newLoc, newErase);							
+	_index.insert(newLoc, to_string(newIdx) + ":" + to_string(newSize) + " ");	
+	
+	/* if this newly added substrings are assembled, then erase from _index string and return the size of assembled strings */
 	if(totalRead + assembled == index) {
 		_index.erase(0, _index.find(' ') + 1);
 		return newSize;
 	}
+	/* else: normal case return 0 */
 	return 0;
 }
 
